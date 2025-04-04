@@ -1,22 +1,32 @@
+# --------------------------------------------------
+# Assignment: Project
+# File:    app.py
+# Author:  Zaki Rangwala (210546860)
+# Version: 2025-04-04
+# --------------------------------------------------
+
+# import libraries
 import dash
 from dash import html, dcc, callback, Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
+import os
 
-# Load the processed data
+# load the processed data
 data_dir = Path(__file__).parent / "data"
 processed_data = pd.read_pickle(data_dir / "processed" / "processed_data.pkl")
 
-# Initialize the Dash app
+# init Dash app
 app = dash.Dash(__name__)
+server = app.server
 
-# App layout
+# app layout config
 app.layout = html.Div([
     html.H1("Census Data Interactive Dashboard", className="header-title"),
 
-    # Tabs for different visualizations
+    # tabs for different visualizations
     dcc.Tabs([
         # Tab 1: Essential Services Distribution
         dcc.Tab(label="Essential Services", children=[
@@ -90,31 +100,31 @@ app.layout = html.Div([
 ])
 
 
+# callback to update essential services graph
 @callback(
     [Output('essential-services-graph', 'figure'),
      Output('service-stats', 'children')],
     Input('service-type', 'value')
 )
 def update_essential_services(service_type):
-    # Create a copy to avoid modifying original
+        # Create a copy to avoid modifying original
     df = processed_data['essential_services'].copy()
 
-    # Group by service_type and aggregate
+    # group by service_type and aggregate
     df = df.groupby('service_type').agg({
         'total': 'sum',
         'men': 'sum',
         'women': 'sum'
     }).reset_index()
 
-    # Calculate percentages
+    # calculate percentages
     df['men_pct'] = (df['men'] / df['total'] * 100).round(1)
     df['women_pct'] = (df['women'] / df['total'] * 100).round(1)
 
     if service_type == 'all':
-        # Create a stacked bar chart showing all services
         fig = go.Figure()
 
-        # Add bars for men and women
+        # add bars for men and women
         fig.add_trace(go.Bar(
             name='Men',
             x=df['service_type'],
@@ -142,7 +152,7 @@ def update_essential_services(service_type):
             height=500
         )
 
-        # Create summary statistics
+        # create summary statistics
         stats_html = html.Div([
             html.H4("Summary Statistics"),
             html.Table([
@@ -168,10 +178,8 @@ def update_essential_services(service_type):
         ])
 
     else:
-        # Filter for specific service
+        # filter for specific service and create a detailed breakdown
         df_filtered = df[df['service_type'] == service_type]
-
-        # Create a detailed breakdown for the selected service
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
@@ -199,7 +207,7 @@ def update_essential_services(service_type):
             height=500
         )
 
-        # Create detailed statistics for the selected service
+        # create detailed statistics for the selected service
         stats_html = html.Div([
             html.H4(f"Statistics for {service_type}"),
             html.P([
@@ -214,6 +222,7 @@ def update_essential_services(service_type):
     return fig, stats_html
 
 
+# callback to update gender employment graph
 @callback(
     Output('gender-employment-graph', 'figure'),
     Input('noc-category', 'value')
@@ -235,6 +244,7 @@ def update_gender_employment(category):
     return fig
 
 
+# callback to update engineering graph
 @callback(
     Output('engineering-graph', 'figure'),
     [Input('engineering-type', 'value'),
@@ -244,21 +254,21 @@ def update_engineering_graph(eng_type, threshold):
     df = processed_data['engineering']
     df_filtered = df[df['engineering_type'] == eng_type]
 
-    # Clean up occupation labels - remove NOC codes and clean up text
+    # clean up occupation labels - remove NOC codes and clean up text
     df_filtered['occupation'] = df_filtered['occupation'].str.replace(
         r'^\d+\s+', '', regex=True)
 
-    # Aggregate data by occupation type
+    # aggregate data by occupation type
     df_agg = df_filtered.groupby('occupation').agg({
         'men': 'sum',
         'women': 'sum',
         'total': 'sum'
     }).reset_index()
 
-    # Create figure with gender breakdown
+    # create figure with gender breakdown
     fig = go.Figure()
 
-    # Add bar for men
+    # add bar for men
     fig.add_trace(go.Bar(
         name='Men',
         x=df_agg['men'],
@@ -269,7 +279,7 @@ def update_engineering_graph(eng_type, threshold):
         textposition='auto',
     ))
 
-    # Add bar for women
+    # add bar for women
     fig.add_trace(go.Bar(
         name='Women',
         x=df_agg['women'],
@@ -280,7 +290,7 @@ def update_engineering_graph(eng_type, threshold):
         textposition='auto',
     ))
 
-    # Update layout
+    # update layout
     fig.update_layout(
         title=f'{eng_type} Engineers Distribution by Gender',
         xaxis_title='Number of Workers',
@@ -293,7 +303,7 @@ def update_engineering_graph(eng_type, threshold):
         uniformtext_mode='hide'
     )
 
-    # Add threshold line
+    # add threshold line
     fig.add_vline(
         x=threshold,
         line_dash="dash",
@@ -307,6 +317,7 @@ def update_engineering_graph(eng_type, threshold):
     return fig
 
 
+# callback to update additional insights graph
 @callback(
     Output('additional-insights-graph', 'figure'),
     Input('additional-insights-graph', 'id')
@@ -323,6 +334,8 @@ def update_additional_insights(_):
     return fig
 
 
-# Run the app
+# run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    port = int(os.environ.get('PORT', 8050))
+    print("Starting the Dash application...")
+    app.run_server(debug=False, host='0.0.0.0', port=port)

@@ -14,7 +14,7 @@ https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810040401
 ├── requirements.txt         # Python dependencies
 ├── src/                    # Source code directory
 │   ├── app.py             # Main Dash application
-│   ├── utils.py           # Helper functions
+│   ├── data_processor.py  # Data processing functions
 │   └── data/              # Data directory
 │       ├── raw/           # Raw downloaded data
 │       └── processed/     # Processed datasets
@@ -26,7 +26,7 @@ https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810040401
 
 ```bash
 python -m venv env
-source env/bin/activate  # On Unix/macOS
+source env/bin/activate
 ```
 
 2. Install dependencies:
@@ -40,7 +40,7 @@ pip install -r requirements.txt
 1. Activate the virtual environment (if not already activated):
 
 ```bash
-source env/bin/activate  # On Unix/macOS
+source env/bin/activate
 ```
 
 2. Run the dashboard:
