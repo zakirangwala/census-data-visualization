@@ -99,6 +99,13 @@ def update_essential_services(service_type):
     # Create a copy to avoid modifying original
     df = processed_data['essential_services'].copy()
 
+    # Group by service_type and aggregate
+    df = df.groupby('service_type').agg({
+        'total': 'sum',
+        'men': 'sum',
+        'women': 'sum'
+    }).reset_index()
+
     # Calculate percentages
     df['men_pct'] = (df['men'] / df['total'] * 100).round(1)
     df['women_pct'] = (df['women'] / df['total'] * 100).round(1)
@@ -237,17 +244,66 @@ def update_engineering_graph(eng_type, threshold):
     df = processed_data['engineering']
     df_filtered = df[df['engineering_type'] == eng_type]
 
-    fig = px.bar(
-        df_filtered,
-        x=['total', 'men', 'women'],
-        y='occupation',
+    # Clean up occupation labels - remove NOC codes and clean up text
+    df_filtered['occupation'] = df_filtered['occupation'].str.replace(
+        r'^\d+\s+', '', regex=True)
+
+    # Aggregate data by occupation type
+    df_agg = df_filtered.groupby('occupation').agg({
+        'men': 'sum',
+        'women': 'sum',
+        'total': 'sum'
+    }).reset_index()
+
+    # Create figure with gender breakdown
+    fig = go.Figure()
+
+    # Add bar for men
+    fig.add_trace(go.Bar(
+        name='Men',
+        x=df_agg['men'],
+        y=df_agg['occupation'],
         orientation='h',
-        title=f'{eng_type} Engineers Distribution',
-        labels={'value': 'Number of Workers', 'occupation': 'Occupation'}
+        marker_color='#2E86C1',
+        text=df_agg['men'].apply(lambda x: f'{x:,.0f}'),
+        textposition='auto',
+    ))
+
+    # Add bar for women
+    fig.add_trace(go.Bar(
+        name='Women',
+        x=df_agg['women'],
+        y=df_agg['occupation'],
+        orientation='h',
+        marker_color='#E74C3C',
+        text=df_agg['women'].apply(lambda x: f'{x:,.0f}'),
+        textposition='auto',
+    ))
+
+    # Update layout
+    fig.update_layout(
+        title=f'{eng_type} Engineers Distribution by Gender',
+        xaxis_title='Number of Workers',
+        yaxis_title='Occupation',
+        barmode='stack',
+        showlegend=True,
+        height=400,
+        margin=dict(l=20, r=20, t=40, b=20),
+        uniformtext_minsize=10,
+        uniformtext_mode='hide'
     )
 
-    fig.add_vline(x=threshold, line_dash="dash", line_color="red",
-                  annotation_text=f"Threshold: {threshold:,}")
+    # Add threshold line
+    fig.add_vline(
+        x=threshold,
+        line_dash="dash",
+        line_color="red",
+        annotation=dict(
+            text=f"Threshold: {threshold:,}",
+            textangle=-90,
+            yshift=10
+        )
+    )
     return fig
 
 
