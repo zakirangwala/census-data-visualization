@@ -2,6 +2,9 @@
 
 This project creates an interactive dashboard using 2023 Census data from Statistics Canada to visualize and analyze various employment statistics across provinces and territories.
 
+
+![image](https://github.com/user-attachments/assets/83516111-a284-4ca1-a11c-c44e720828c0)
+
 ## PRODUCTION URL : https://web-production-7f38.up.railway.app/
 
 ## Data Source
